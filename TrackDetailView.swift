@@ -74,9 +74,14 @@ struct TrackDetailView: View {
                 
                 Spacer()
                 
-                Slider(value: $progress, in: 0...1)
-                    .accentColor(Color.white)
-                    .padding(.horizontal, 68)
+                Slider(value: $progress, in: 0...1, onEditingChanged: { editing in
+                    if !editing {
+                        let targetTime = CMTime(seconds: self.duration * self.progress, preferredTimescale: 600)
+                        player?.seek(to: targetTime)
+                    }
+                })
+                .accentColor(Color.white)
+                .padding(.horizontal, 68)
                 HStack {
                     Text(formatTime(seconds: currentTime))
                         .font(.system(size: 13, weight: .medium))
@@ -127,6 +132,8 @@ struct TrackDetailView: View {
         let playerItem = AVPlayerItem(url: song.previewUrl)
         player = AVPlayer(playerItem: playerItem)
         player?.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main) { time in
+            guard let duration = player?.currentItem?.duration else { return }
+            self.duration = duration.seconds
             self.currentTime = time.seconds
             self.progress = self.currentTime / self.duration
         }
